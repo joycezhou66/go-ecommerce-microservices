@@ -1,0 +1,70 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Build all services
+        run: |
+          go build -o bin/user-service ./services/user
+          go build -o bin/product-service ./services/product
+          go build -o bin/cart-service ./services/cart
+          go build -o bin/order-service ./services/order
+          go build -o bin/payment-service ./services/payment
+          go build -o bin/notification-service ./services/notification
+          go build -o bin/gateway ./services/gateway
+
+  build-docker:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push images
+        run: |
+          services=("user" "product" "cart" "order" "payment" "notification" "gateway")
+          for service in "${services[@]}"; do
+            docker build -t ${{ secrets.DOCKER_USERNAME }}/go-ecommerce-$service:latest -f services/$service/Dockerfile .
+            docker push ${{ secrets.DOCKER_USERNAME }}/go-ecommerce-$service:latest
+          done
+
+  deploy:
+    needs: build-docker
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to production
+        run: |
+          echo "Deployment step - configure with your cloud provider"
+          # Add deployment commands here (e.g., kubectl apply, docker-compose up, etc.)
