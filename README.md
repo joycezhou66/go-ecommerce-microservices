@@ -2,6 +2,8 @@
 
 A scalable e-commerce platform built with Go microservices architecture and Docker.
 
+**Live Demo:** https://go-ecommerce-microservices-production.up.railway.app/
+
 ## Tech Stack
 
 - **Backend:** Go 1.21
