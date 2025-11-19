@@ -99,18 +99,31 @@ var jwtSecret = []byte("default-secret-key-change-in-production")
 func main() {
 	// Connect to database
 	databaseURL := os.Getenv("DATABASE_URL")
+	log.Printf("DATABASE_URL set: %v", databaseURL != "")
+
 	if databaseURL == "" {
-		log.Println("WARNING: DATABASE_URL not set, running without database")
+		log.Println("ERROR: DATABASE_URL not set")
 	} else {
 		var err error
 		db, err = sql.Open("postgres", databaseURL)
 		if err != nil {
-			log.Printf("WARNING: Failed to connect to database: %v", err)
+			log.Printf("ERROR: Failed to open database: %v", err)
+			db = nil
 		} else {
+			db.SetMaxOpenConns(10)
+			db.SetMaxIdleConns(5)
 			if err := db.Ping(); err != nil {
-				log.Printf("WARNING: Failed to ping database: %v", err)
+				log.Printf("ERROR: Failed to ping database: %v", err)
+				db = nil
 			} else {
-				log.Println("Connected to database")
+				log.Println("SUCCESS: Connected to database")
+				// Test query
+				var count int
+				if err := db.QueryRow("SELECT COUNT(*) FROM products").Scan(&count); err != nil {
+					log.Printf("ERROR: Test query failed: %v", err)
+				} else {
+					log.Printf("SUCCESS: Found %d products in database", count)
+				}
 			}
 		}
 	}
