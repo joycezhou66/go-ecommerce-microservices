@@ -100,21 +100,20 @@ func main() {
 	// Connect to database
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
-		log.Fatal("DATABASE_URL environment variable required")
+		log.Println("WARNING: DATABASE_URL not set, running without database")
+	} else {
+		var err error
+		db, err = sql.Open("postgres", databaseURL)
+		if err != nil {
+			log.Printf("WARNING: Failed to connect to database: %v", err)
+		} else {
+			if err := db.Ping(); err != nil {
+				log.Printf("WARNING: Failed to ping database: %v", err)
+			} else {
+				log.Println("Connected to database")
+			}
+		}
 	}
-
-	var err error
-	db, err = sql.Open("postgres", databaseURL)
-	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
-	}
-	defer db.Close()
-
-	if err := db.Ping(); err != nil {
-		log.Fatal("Failed to ping database:", err)
-	}
-
-	log.Println("Connected to database")
 
 	// Set up router
 	r := mux.NewRouter()
@@ -261,6 +260,12 @@ func generateToken(userID uint, email string) (string, error) {
 
 // Product handlers
 func getProducts(w http.ResponseWriter, r *http.Request) {
+	if db == nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode([]Product{})
+		return
+	}
+
 	rows, err := db.Query(
 		`SELECT id, name, description, price, stock, category, image_url, created_at
 		 FROM products ORDER BY created_at DESC`,
