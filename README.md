@@ -110,6 +110,16 @@ go run services/gateway/main.go
 | DB_PASSWORD | postgres | Database password |
 | JWT_SECRET | (generated) | JWT signing key |
 
+## Deploy to Railway
+
+1. Push to GitHub
+2. Go to [railway.app](https://railway.app)
+3. Click "New Project" → "Deploy from GitHub repo"
+4. Select your repository
+5. Add a PostgreSQL database from "New" → "Database"
+6. Set environment variables in Railway dashboard
+7. Railway will auto-deploy from the Dockerfile
+
 ## License
 
 MIT
