@@ -63,6 +63,13 @@ body {
     color: var(--primary);
 }
 
+#auth-links,
+#user-links {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
 #cart-count {
     background: var(--primary);
     color: white;
